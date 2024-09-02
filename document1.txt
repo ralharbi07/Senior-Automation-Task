@@ -1,0 +1,134 @@
+1.	First we will add dependencies to pom.xml file
+
+<dependencies>
+    <dependency>
+        <groupId>io.rest-assured</groupId>
+        <artifactId>rest-assured</artifactId>
+        <version>5.3.0</version>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>4.13.2</version>
+        <scope>test</scope>
+    </dependency>
+</dependencies>
+
+2.	Then we will create a base test class to set up common configurations like base URI and authentication.
+This class sets up the base URI for the API. This ensures that all test classes inherit this setup, making it easy to manage.
+
+import io.restassured.RestAssured;
+import org.junit.BeforeClass;
+
+public class BaseTest {
+    @BeforeClass
+    public static void setup() {
+        // Base URI for the API
+        RestAssured.baseURI = "https://pay2.foodics.dev/cp_internal";
+    }
+}
+
+
+
+
+
+
+
+*************** ************ TEST CASES ************************
+
+1.	TC 1- Successful Login
+
+Tests successful login by asserting the response status code is 200 and optionally extracting and printing the token.
+
+
+import io.restassured.response.Response;
+import org.junit.Test;
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.equalTo;
+
+public class LoginTest extends BaseTest {
+
+    @Test
+    public void testSuccessfulLogin() {
+        // Define the payload for the login request
+        String payload = "{ \"email\": \"merchant@foodics.com\", \"password\": \"123456\" }";
+
+        // Send POST request to /login endpoint
+        Response response = given()
+                .header("Content-Type", "application/json")
+                .body(payload)
+                .when()
+                .post("/login")
+                .then()
+                .statusCode(200) // Assert that status code is 200
+                .extract().response();
+
+        // Extract the token or response body to assert further
+        String token = response.jsonPath().getString("token");
+        System.out.println("Token: " + token);
+    }
+}
+
+
+
+
+
+2.	TC 2- Login with Invalid Credentials
+
+Tests login with invalid credentials by asserting that the response status code is 401 and the error message is appropriate.
+
+import org.junit.Test;
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.equalTo;
+
+public class InvalidLoginTest extends BaseTest {
+
+    @Test
+    public void testLoginWithInvalidCredentials() {
+        // Define the payload with invalid credentials
+        String payload = "{ \"email\": \"wrong@foodics.com\", \"password\": \"wrongpassword\" }";
+
+        // Send POST request to /login endpoint
+        given()
+                .header("Content-Type", "application/json")
+                .body(payload)
+                .when()
+                .post("/login")
+                .then()
+                .statusCode(401) // Assert that status code is 401 for unauthorized
+                .body("message", equalTo("Invalid credentials")); // Assert the error message
+    }
+}
+
+3.	Verify logged in User
+
+Verifies that the /whoami endpoint correctly returns the logged-in user's information using a valid token.
+
+import io.restassured.response.Response;
+import org.junit.Test;
+import static io.restassured.RestAssured.given;
+
+public class WhoAmITest extends BaseTest {
+
+    @Test
+    public void testWhoAmI() {
+        // Assuming the token is retrieved from a successful login test
+        String token = "your_token_here"; // Replace with a valid token
+
+        // Send GET request to /whoami endpoint
+        Response response = given()
+                .header("Authorization", "Bearer " + token)
+                .when()
+                .get("/whoami")
+                .then()
+                .statusCode(200) // Assert that status code is 200
+                .extract().response();
+
+        // Assert the user information
+        String email = response.jsonPath().getString("email");
+        assert email.equals("merchant@foodics.com");
+    }
+}
+
+
