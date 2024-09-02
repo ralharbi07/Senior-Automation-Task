@@ -1,0 +1,91 @@
+Senior Automation Task Solution
+Part 1: Selenium-Java Automation
+
+
+2. Writing the Selenium Script
+Open the Amazon Egypt page:
+
+WebDriver driver = new ChromeDriver();
+driver.get("https://www.amazon.eg/");
+
+Login to the website:
+
+driver.findElement(By.id("ap_email")).sendKeys("your-email@example.com");
+driver.findElement(By.id("ap_password")).sendKeys("your-password");
+driver.findElement(By.id("signInSubmit")).click();
+
+Open the "All" menu and navigate to the Video Games section:
+
+driver.findElement(By.id("nav-hamburger-menu")).click();
+driver.findElement(By.linkText("Video Games")).click();
+driver.findElement(By.linkText("All Video Games")).click();
+
+Apply the filters:
+
+driver.findElement(By.xpath("//span[text()='Free Shipping']")).click();
+driver.findElement(By.xpath("//span[text()='New']")).click();
+
+Sort the products:
+
+Select sortDropdown = new Select(driver.findElement(By.id("sort")));
+sortDropdown.selectByVisibleText("Price: High to Low");
+
+Add products to the cart:
+
+List<WebElement> products = driver.findElements(By.cssSelector("div.s-main-slot div.s-result-item"));
+for (WebElement product : products) {
+    String priceText = product.findElement(By.cssSelector("span.a-price-whole")).getText().replace(",", "");
+    int price = Integer.parseInt(priceText);
+    if (price < 15000) {
+        product.findElement(By.cssSelector("input[type='submit']")).click();
+    }
+}
+
+Verify the total amount:
+
+String totalAmountText = driver.findElement(By.id("sc-subtotal-amount-activecart")).getText().replace(",", "");
+int totalAmount = Integer.parseInt(totalAmountText);
+System.out.println("Total Amount: " + totalAmount);
+
+Part 2: REST API Testing with Rest-Assured
+
+
+<dependency>
+    <groupId>io.rest-assured</groupId>
+    <artifactId>rest-assured</artifactId>
+    <version>5.3.0</version>
+</dependency>
+
+2. Writing Test Cases
+Test case for login:
+
+@Test
+public void testLogin() {
+    given()
+        .contentType("application/json")
+        .body("{\"email\": \"merchant@foodics.com\", \"password\": \"123456\"}")
+    .when()
+        .post("https://pay2.foodics.dev/cp_internal/login")
+    .then()
+        .statusCode(200)
+        .body("token", equalTo("Lyz22cfYKMetFhKQybx5HAmVimF1i0xO"));
+}
+
+Test case for "Who Am I":
+
+@Test
+public void testWhoAmI() {
+    given()
+        .header("Authorization", "Bearer Lyz22cfYKMetFhKQybx5HAmVimF1i0xO")
+    .when()
+        .get("https://pay2.foodics.dev/cp_internal/whoami")
+    .then()
+        .statusCode(200)
+        .body("email", equalTo("merchant@foodics.com"));
+}
+
+
+
+
+
+Solution provided by: Reem Alharbi
